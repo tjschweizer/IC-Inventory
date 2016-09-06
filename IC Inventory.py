@@ -5,13 +5,15 @@ Main Window Setup
 
 by Taylor Schweizer
 """
-
 #Import Statements
 from tkinter import *
 from tkinter.ttk import *
-from SearchScreen import SearchScreen
+
+from GlobalSettings import Settings
 from InventoryScreen import InventoryScreen
+from SearchScreen import SearchScreen
 from SettingsScreen import SettingsScreen
+
 
 #createScreens function - initializes everything
 def createScreens():
@@ -23,7 +25,7 @@ def createScreens():
     notebook.pack()
 
     #Create an instance of each screen
-    searchScreen = SearchScreen(notebook)
+    searchScreen = SearchScreen(notebook, settings)
     inventoryScreen = InventoryScreen(notebook)
     settingsScreen = SettingsScreen(notebook)
 
@@ -35,6 +37,7 @@ def createScreens():
 
 #Run the program
 if __name__ == '__main__':
+    settings = Settings()
     root=Tk()
     root.title("IC Inventory")
     createScreens()
