@@ -13,7 +13,7 @@ from OctoUtils import *
 
 class SearchScreen(Frame):
     # Override init
-    def __init__(self, master):
+    def __init__(self, master, settings):
         # Initialize the Frame
         Frame.__init__(self, master)
 
@@ -27,28 +27,18 @@ class SearchScreen(Frame):
         #Create the widgets
         self.createWidgets()
         self.initializeWidgets()
+        self.settings = settings
 
     def nextPage(self):
         self.currentPage = self.currentPage + 1
-        if self.currentPage > self.maxPages:
-            self.currentPage = self.maxPages
-            self.nextPageButton['state'] = (DISABLED)
-        self.prevPageButton['state'] = (NORMAL)
-        # run octosearch
-        octoSearch(self)
+        self.performOctoSearch()
 
     def prevPage(self):
         self.currentPage = self.currentPage - 1
-        if self.currentPage < 1:
-            self.currentPage = 1
-            self.prevPageButton['state'] = (DISABLED)
-        self.prevPageButton['state'] = (NORMAL)
-        # run octosearch
-        octoSearch(self)
+        self.performOctoSearch()
 
     def createWidgets(self):
-        # Start with the search bar
-        # Create object variable to contain the search text
+        # Search Bar
         self.searchQuery = StringVar()
         self.searchText = Entry(self)
         self.searchText.grid(row=0, column=0, padx=10, sticky=EW)
@@ -89,8 +79,8 @@ class SearchScreen(Frame):
         self.techSpecsList.grid(row=0, column=0, padx=10, pady=5)
 
         # Show text specs button
-        self.showTechSpecs = Button(self, text='Show Tech Specs')
-        self.showTechSpecs.grid(row=3, column=0, pady=5)
+        self.showTechSpecButton = Button(self, text='Show Tech Specs')
+        self.showTechSpecButton.grid(row=3, column=0, pady=5)
 
         # Page control buttons - need to make new frame for grid layout
         self.pageNavigationFrame = Frame(self)
@@ -117,9 +107,47 @@ class SearchScreen(Frame):
 
     def initializeWidgets(self):
         self.searchText['textvariable'] = self.searchQuery
-        self.searchButton['command'] = lambda: octoSearch(self)
-        self.nextPageButton['command'] = lambda: self.nextPage()
-        self.prevPageButton['command'] = lambda: self.prevPage()
-        self.showTechSpecs['command'] = lambda: techSpecs(self)
-        self.prevPageButton['state'] = (DISABLED)
-        self.nextPageButton['state'] = (DISABLED)
+        self.searchButton['command'] = lambda: self.performOctoSearch(reset=True)
+        self.nextPageButton['command'] = self.nextPage
+        self.prevPageButton['command'] = self.prevPage
+        self.showTechSpecButton['command'] = self.showTechSpecs
+        self.prevPageButton['state'] = DISABLED
+        self.nextPageButton['state'] = DISABLED
+        self.inventoryButton['command'] = lambda: self.settings.inventory.addToInventory(self.techSpecDict,
+                                                                                         self.quantitySpinbox.get())
+
+    def showTechSpecs(self):
+        row = self.searchResults[self.resultsList.getSelectedRow()]
+        uid = row[3]
+        self.techSpecDict = getTechSpecs(self.settings.getAPIKey(), uid)
+        self.techSpecsList.techSpecEnable()
+        self.techSpecsList.addTechSpec(self.techSpecDict['specs'])
+
+    def performOctoSearch(self, reset=False):
+        self.searchResults = None
+        if (reset == True):
+            self.currentPage = 1
+
+        if self.currentPage <= 1:
+            self.currentPage = 1
+            self.prevPageButton['state'] = DISABLED
+        else:
+            self.prevPageButton['state'] = NORMAL
+
+        startNumber = self.currentPage * 10 - 10
+        octoDict = octoSearch(self.settings.getAPIKey(), startNumber, self.searchQuery.get())
+        self.maxPages = getMaxPages(getHits(octoDict))
+
+        if self.currentPage >= self.maxPages:
+            self.currentPage = self.maxPages
+            self.nextPageButton['state'] = DISABLED
+        else:
+            self.nextPageButton['state'] = NORMAL
+
+        self.searchResults = []
+        for result in octoDict['results']:
+            item = result['item']
+            self.searchResults.append((item['mpn'], item['brand']['name'], item['short_description'], item['uid']))
+
+        self.resultsList.addItem(self.searchResults)
+        self.pageNavigationLabel['text'] = 'Page {0} of {1}'.format(self.currentPage, self.maxPages)

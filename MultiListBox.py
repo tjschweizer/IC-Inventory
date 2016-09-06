@@ -46,16 +46,28 @@ class MultiListbox(Frame):
             for j in range(0, 3):
                 self.lists[j].insert(i, item[i][j])
 
-    def addTechSpec(self, spec):
+    def techSpecEnable(self):
+        self.lists[0].configure(state=NORMAL)
+        self.lists[1].configure(state=NORMAL)
+
+    def addTechSpec(self, specList):
 
         self.lists[0].delete(0, 9)
         self.lists[1].delete(0, 9)
-        for i in range(0, len(spec)):
-            for j in range(0, 2):
-                self.lists[j].insert(i, spec[i][j])
+        i = 0
+        for spec in specList:
+            specData = specList[spec]
+            self.lists[0].insert(i, specData['metadata']['name'])
+            valueString = specData['display_value']
+            # if(specData['metadata']['unit']!=None):
+            #    valueString += '  '
+            #    valueString += specData['metadata']['unit']['symbol']
+            self.lists[1].insert(i, valueString)
+            i += 1
 
-    def getSelectedUID(self, y):
-        row = self.lists[0].nearest(y)
+    def getSelectedRow(self):
+
+        return self.row
 
     def bindScroll(self):
         self.lists[0].bind("<MouseWheel>", self.OnMouseWheel)
