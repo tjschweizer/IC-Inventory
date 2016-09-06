@@ -9,7 +9,7 @@ by Taylor Schweizer
 # Import Statements
 from MultiListBox import MultiListbox
 from OctoUtils import *
-
+from tkinter import *
 
 class SearchScreen(Frame):
     # Override init
