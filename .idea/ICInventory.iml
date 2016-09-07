@@ -5,6 +5,9 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
+  <component name="PackageRequirementsSettings">
+    <option name="requirementsPath" value="C:\Users\Taylor\PycharmProjects\ICInventory\requirements.txt" />
+  </component>
   <component name="ReSTService">
     <option name="workdir" value="C:\Users\Taylor\PycharmProjects\ICInventory\docs" />
     <option name="DOC_DIR" value="C:\Users\Taylor\PycharmProjects\ICInventory\docs" />
