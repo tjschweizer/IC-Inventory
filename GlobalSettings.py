@@ -9,24 +9,25 @@ from InventoryUtilities import Inventory
 
 class Settings:
     def __init__(self):
-        self.inventory = Inventory('ICInventory.txt')
+        self.inventory = Inventory('Inventory.p')
 
-        if os.path.isfile('config.ini') == True and os.path.isfile('ICInventory.txt') == True:
+        if os.path.isfile('config.ini') == True and os.path.isfile('Inventory.p') == True:
             self.openConfig()
+            self.openInventory()
 
-        elif os.path.isfile('config.ini') == False and os.path.isfile('ICInventory.txt') == True:
+        elif os.path.isfile('config.ini') == False and os.path.isfile('Inventory.p') == True:
             msgText = "There is no valid Config file found in \n{0}.\n" \
                       "Click 'OK' to continue and create a new file in the program directory".format(
                 os.getcwd())
-            self.invalidInventoryPopup(msgText, self.createConfig())
+            self.invalidInventoryPopup(msgText, self.createConfig(), self.openInventory())
 
-        elif os.path.isfile('config.ini') == True and os.path.isfile('ICInventory.txt') == False:
+        elif os.path.isfile('config.ini') == True and os.path.isfile('Inventory.p') == False:
             msgText = "There is no valid Inventory file found in \n{0}.\n" \
                       "Click 'OK' to continue and create a new file in the program directory".format(
                 os.getcwd())
             self.invalidInventoryPopup(msgText, self.openConfig(), self.inventory.createInventory())
 
-        elif os.path.isfile('config.ini') == False and os.path.isfile('ICInventory.txt') == False:
+        elif os.path.isfile('config.ini') == False and os.path.isfile('Inventory.p') == False:
             msgText = "There is no valid Config or Inventory file found in \n{0}.\n" \
                       "Click 'OK' to continue and create the new files in the program directory".format(
                 os.getcwd())
@@ -40,13 +41,16 @@ class Settings:
         self.config = ConfigParser()
         self.config.read('config.ini')
         self.config.add_section('main')
-        self.config.set('main', 'api', value='1ef54ac1')
         with open('config.ini', 'w') as f:
             self.config.write(f)
+        f.close()
 
     def openConfig(self):
         self.config = ConfigParser()
         self.config.read('config.ini')
+
+    def openInventory(self):
+        self.inventory.openInventory()
 
     def invalidInventoryPopup(self, msg, *mainFuncs):
         # combine_funcs from
@@ -65,6 +69,12 @@ class Settings:
     def getAPIKey(self):
         apiKey = self.config.get('main', 'api')
         return apiKey
+
+    def setAPIKey(self, api):
+        self.config.set('main', 'api', api)
+        with open('config.ini', 'r+') as f:
+            self.config.write(f)
+        f.close()
 
     def combine_funcs(*funcs):
         def combined_func(*args, **kwargs):
