@@ -28,7 +28,6 @@ class SearchScreen(Frame):
         self.createWidgets()
         self.initializeWidgets()
         self.settings = settings
-
     def nextPage(self):
         self.currentPage = self.currentPage + 1
         self.performOctoSearch()
@@ -64,7 +63,7 @@ class SearchScreen(Frame):
         # to create a MultiListbox class
         self.resultListLabels = ['Part Number', 'Manufacturer', 'Description']
         self.resultsListWidths = (20, 25, 75)
-        self.resultsList = MultiListbox(self, self.resultListLabels, self.resultsListWidths, NORMAL, False)
+        self.resultsList = MultiListbox(self.resultListLabels, self.resultsListWidths, self, NORMAL, False)
         self.resultsList.grid(row=2, column=0, padx=10, pady=5)
 
         # Repeat the previous to make a box for the tech specs
@@ -74,8 +73,8 @@ class SearchScreen(Frame):
         self.techSpecsFrame.grid(row=2, column=1, padx=10, pady=5)
         self.techScroll = Scrollbar(self.techSpecsFrame, orient=VERTICAL)
         self.techScroll.grid(row=0, column=1, sticky=N + S)
-        self.techSpecsList = MultiListbox(self.techSpecsFrame, self.techSpecsLabels, self.techSpecsWidths, DISABLED,
-                                          True)
+        self.techSpecsList = MultiListbox(self.techSpecsLabels, self.techSpecsWidths, self.techSpecsFrame, DISABLED,
+                                          True, self.techScroll)
         self.techSpecsList.grid(row=0, column=0, padx=10, pady=5)
 
         # Show text specs button
@@ -113,15 +112,25 @@ class SearchScreen(Frame):
         self.showTechSpecButton['command'] = self.showTechSpecs
         self.prevPageButton['state'] = DISABLED
         self.nextPageButton['state'] = DISABLED
-        self.inventoryButton['command'] = lambda: self.settings.inventory.addToInventory(self.techSpecDict,
+        self.inventoryButton['state'] = DISABLED
+        self.inventoryButton['command'] = lambda: self.settings.inventory.addToInventory(self.activeOctopart,
                                                                                          self.quantitySpinbox.get())
+        self.quantitySpinbox['command'] = self.invButtonState
+
+    def invButtonState(self):
+
+        if int(self.quantitySpinbox.get()) == 0:
+            self.inventoryButton.configure(state=DISABLED)
+        else:
+            self.inventoryButton.configure(state=NORMAL)
 
     def showTechSpecs(self):
-        row = self.searchResults[self.resultsList.getSelectedRow()]
-        uid = row[3]
-        self.techSpecDict = getTechSpecs(self.settings.getAPIKey(), uid)
-        self.techSpecsList.techSpecEnable()
-        self.techSpecsList.addTechSpec(self.techSpecDict['specs'])
+        row = self.resultsList.getSelectedRow()
+        self.activeOctopart = self.octoList[row]
+        self.activeOctopart.getTechSpecs(self.settings.getAPIKey())
+        self.techSpecsList.listEnable()
+        self.techSpecsList.addTechSpecList(self.octoList[row])
+
 
     def performOctoSearch(self, reset=False):
         self.searchResults = None
@@ -135,8 +144,9 @@ class SearchScreen(Frame):
             self.prevPageButton['state'] = NORMAL
 
         startNumber = self.currentPage * 10 - 10
-        octoDict = octoSearch(self.settings.getAPIKey(), startNumber, self.searchQuery.get())
-        self.maxPages = getMaxPages(getHits(octoDict))
+        self.octoList = octoSearch(self.settings.getAPIKey(), startNumber, self.searchQuery.get())
+        self.maxPages = self.octoList[len(self.octoList) - 1]
+        self.octoList.remove(self.maxPages)
 
         if self.currentPage >= self.maxPages:
             self.currentPage = self.maxPages
@@ -144,10 +154,5 @@ class SearchScreen(Frame):
         else:
             self.nextPageButton['state'] = NORMAL
 
-        self.searchResults = []
-        for result in octoDict['results']:
-            item = result['item']
-            self.searchResults.append((item['mpn'], item['brand']['name'], item['short_description'], item['uid']))
-
-        self.resultsList.addItem(self.searchResults)
+        self.resultsList.addOctopartList(self.octoList)
         self.pageNavigationLabel['text'] = 'Page {0} of {1}'.format(self.currentPage, self.maxPages)

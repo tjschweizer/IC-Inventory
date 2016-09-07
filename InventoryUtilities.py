@@ -1,58 +1,42 @@
-import json
-import shutil
-import tempfile
+import pickle
 
 
 class Inventory:
     def __init__(self, filename):
         self.invFile = filename
+        self.inventory = []
 
     def createInventory(self):
-        openedFile = open(self.invFile, 'w+')
+        openedFile = open(self.invFile, 'wb')
+        tmp = []
+        pickle.dump(tmp, openedFile)
         openedFile.close()
 
-    def searchInventory(self, jStream, uid):
-        i = 0
-        partList = jStream['part']
-        for part in partList:
-            if part['uid'] == uid:
-                returnVal = i
+    def openInventory(self):
+        openedFile = open(self.invFile, 'rb+')
+        self.inventory = pickle.load(openedFile)
+        openedFile.close()
+
+    def saveInventory(self):
+        openedFile = open(self.invFile, 'rb+')
+        tmp = sorted(self.inventory, key=lambda part: part.mpn)
+        pickle.dump(tmp, openedFile)
+        openedFile.close()
+        self.openInventory()
+
+    def searchInventory(self, octoPart):
+        index = -1
+        for i in range(len(self.inventory)):
+            if self.inventory[i].uid == octoPart.uid:
+                index = i
                 break
-            else:
-                returnVal = -1
-            i = i + 1
+        return index
 
-        return returnVal
-
-    def addToInventory(self, jsonString, quantity):
-        openedFile = open(self.invFile, 'r+')
-        tmpFile = tempfile.NamedTemporaryFile(mode='w+', delete=False)
-        stream = json.load(openedFile)
-        index = self.searchInventory(stream, jsonString['uid'])
-        newStream = jsonString
-        if int(quantity) < 1:
-            openedFile.close()
-            tmpFile.close()
-            tmpFile.delete()
+    def addToInventory(self, octoPart, quantity):
+        index = self.searchInventory(octoPart)
+        if index == -1:
+            octoPart.quantity = quantity
+            self.inventory.append(octoPart)
         else:
-
-            if index == -1:
-                newPart = {}
-                newPart['quantity'] = quantity
-                newPart['manufacturer'] = newStream['manufacturer']
-                newPart['brand'] = newStream['brand']
-                newPart['mpn'] = newStream['mpn']
-                newPart['uid'] = newStream['uid']
-                newPart['octopart_url'] = newStream['octopart_url']
-                newPart['specs'] = newStream['specs']
-                stream['part'].append(newPart)
-
-            else:
-                stream['part'][index]['quantity'] = quantity
-
-            json.dump(stream, tmpFile)
-            openedFile.close()
-
-            tmpFile.close()
-            shutil.move(tmpFile.name, self.invFile)
-            tmpFile.delete
+            self.inventory[index].quantity += quantity
+        self.saveInventory()
