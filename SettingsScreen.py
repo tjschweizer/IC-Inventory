@@ -9,7 +9,6 @@ by Taylor Schweizer
 #Import Statements
 from tkinter import *
 from tkinter.ttk import *
-from MultiListBox import MultiListbox
 
 #Settings Screen Class
 class SettingsScreen(Frame):
